@@ -1,31 +1,50 @@
-import React from "react";
-
+import React, { useState, useEffect } from "react";
+import api from "./services/api";
+import Header from "./components/Header";
 import "./styles.css";
 
 function App() {
-  async function handleAddRepository() {
-    // TODO
-  }
+	const [repositories, setRepositories] = useState([]);
 
-  async function handleRemoveRepository(id) {
-    // TODO
-  }
+	useEffect(() => {
+		api.get("repositories").then((response) => {
+			setRepositories(response.data);
+		});
+	}, []);
 
-  return (
-    <div>
-      <ul data-testid="repository-list">
-        <li>
-          Repositório 1
+	async function handleAddRepository() {
+		const response = await api.post("repositories", {
+			title: `Novo Projeto ${Date.now()}`,
+			owner: "Guilherme",
+		});
 
-          <button onClick={() => handleRemoveRepository(1)}>
-            Remover
-          </button>
-        </li>
-      </ul>
+		const repository = response.data;
 
-      <button onClick={handleAddRepository}>Adicionar</button>
-    </div>
-  );
+		setRepositories([...repositories, repository]);
+	}
+
+	async function handleRemoveRepository(id) {
+		const repositoryId = repositories[id].id;
+		const repositoryIndex = repositories.findIndex((repository) => repository.id === repositoryId);
+
+		await api.delete("repositories/" + repositoryId);
+		setRepositories([...repositories.slice(0, repositoryIndex)]);
+	}
+
+	return (
+		<>
+			<Header title="Desafio: Conceitos do ReactJS" />
+			<ul data-testid="repository-list">
+				{repositories.map((repository, index) => (
+					<li key={repository.id}>
+						{repository.title}
+						<button onClick={() => handleRemoveRepository(index)}>Remover</button>
+					</li>
+				))}
+			</ul>
+			<button onClick={handleAddRepository}>Adicionar</button>
+		</>
+	);
 }
 
 export default App;
